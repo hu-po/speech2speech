@@ -10,20 +10,21 @@ logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 
-def text_to_speech(text: str, voice_name: str = "Hugo"):
-    log.info(f"Generating audio using voice {voice_name}...")
+def text_to_speech(text: str, voice: str = "Hugo"):
+    log.info(f"Generating audio using voice {voice}...")
     time_start = time.time()
     user = ElevenLabsUser(os.environ["ELEVENLABS_API_KEY"])
-    voice = user.get_voices_by_name(voice_name)[0]
-    voice.generate_and_play_audio(text, playInBackground=False)
+    _voice = user.get_voices_by_name(voice)[0]
+    _voice.generate_and_play_audio(text, playInBackground=False)
     log.info(f"Audio duration: {time.time() - time_start:.2f} seconds")
 
 
-def run(audio, context):
+def run(audio, context, model, max_tokens, temperature, voice):
     request = speech_to_text(audio)
-    response = request_to_response(request, context)
-    text_to_speech(response)
-    return response
+    response = request_to_response(
+        request, context, model, max_tokens, temperature)
+    text_to_speech(response, voice)
+    return f"--Request--\n{request}\n\n--Response--\n{response}"
 
 
 def speech_to_text(audio_path):
@@ -33,11 +34,10 @@ def speech_to_text(audio_path):
     text = transcript["text"]
     log.info(f"Transcription duration: {time.time() - time_start:.2f} seconds")
     log.info(f"Transcript: \n\t{text}")
-
     return text
 
 
-def request_to_response(request, context, model="gpt-3.5-turbo"):
+def request_to_response(request, context, model="gpt-3.5-turbo", max_tokens=20, temperature=0.5):
     openai.api_key = os.getenv("OPENAI_API_KEY")
     time_start = time.time()
     log.info(f"GPT-3 Starting")
@@ -53,9 +53,9 @@ def request_to_response(request, context, model="gpt-3.5-turbo"):
                 "content": request,
             },
         ],
-        temperature=0,
+        temperature=temperature,
         n=1,
-        max_tokens=20,
+        max_tokens=max_tokens,
     )
     response: str = _response['choices'][0]['message']['content']
     log.info(f"GPT-3 duration: {time.time() - time_start:.2f} seconds")
@@ -70,6 +70,10 @@ interface = gr.Interface(
         gr.Audio(source="microphone", type="filepath"),
         gr.Textbox(lines=2, label="Context",
                    value="You are helpful and kind, you chat with people and help them understand themselves."),
+        gr.Dropdown(choices=["gpt-3.5-turbo"], value="gpt-3.5-turbo"),
+        gr.Slider(minimum=1, maximum=100, value=20, label="Max tokens", step=1),
+        gr.Slider(minimum=0.0, maximum=1.0, value=0.5, label="Temperature"),
+        gr.Dropdown(choices=["Hugo", "Adam", "Rachel"], value="Hugo"),
     ],
     [
         gr.Textbox(lines=2, label="Output")
