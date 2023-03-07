@@ -1,6 +1,10 @@
-# maiself
-talk to the AI version of yourself
+# M(AI)SELF
 
+Talk to GPT and hear it reply with your own voice. Requires ElevenLabs and OpenAI API keys.
+
+```
+python run.py
+```
 
 ## Setup
 
