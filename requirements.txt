@@ -1,0 +1,6 @@
+openai==0.27.0
+elevenlabslib
+sounddevice==0.4.6
+soundfile==0.12.1
+gradio==3.19.1
+scripy==1.10.1
