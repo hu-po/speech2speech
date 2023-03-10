@@ -3,8 +3,8 @@ import os
 import time
 
 import gradio as gr
-import openai
 
+from openailib import speech_to_text, respond_with_system_context
 from elevenlabs import text_to_speech
 
 logging.basicConfig(level=logging.INFO)
@@ -13,46 +13,10 @@ log = logging.getLogger(__name__)
 
 def run(audio, context, model, max_tokens, temperature, voice):
     request = speech_to_text(audio)
-    response = request_to_response(
+    response = respond_with_system_context(
         request, context, model, max_tokens, temperature)
     text_to_speech(response, voice)
     return f"--Request--\n{request}\n\n--Response--\n{response}"
-
-
-def speech_to_text(audio_path):
-    log.info("Transcribing audio...")
-    time_start = time.time()
-    transcript = openai.Audio.transcribe("whisper-1", open(audio_path, "rb"))
-    text = transcript["text"]
-    log.info(f"Transcription duration: {time.time() - time_start:.2f} seconds")
-    log.info(f"Transcript: \n\t{text}")
-    return text
-
-
-def request_to_response(request, context, model="gpt-3.5-turbo", max_tokens=20, temperature=0.5):
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-    time_start = time.time()
-    log.info(f"GPT-3 Starting")
-    _response = openai.ChatCompletion.create(
-        model=model,
-        messages=[
-            {
-                "role": "system",
-                "content": context,
-            },
-            {
-                "role": "user",
-                "content": request,
-            },
-        ],
-        temperature=temperature,
-        n=1,
-        max_tokens=max_tokens,
-    )
-    response: str = _response['choices'][0]['message']['content']
-    log.info(f"GPT-3 duration: {time.time() - time_start:.2f} seconds")
-    log.info(f" Response: \n\t{response}")
-    return response
 
 
 # Create interface
@@ -66,7 +30,8 @@ interface = gr.Interface(
         gr.Slider(minimum=1, maximum=100, value=20,
                   label="Max tokens", step=1),
         gr.Slider(minimum=0.0, maximum=1.0, value=0.5, label="Temperature"),
-        gr.Dropdown(choices=["don", "barry", "joe", "Hugo", "Adam", "Rachel"], value="don"),
+        gr.Dropdown(choices=["don", "barry", "joe",
+                    "Hugo", "Adam", "Rachel"], value="don"),
     ],
     [
         gr.Textbox(lines=2, label="Output")
