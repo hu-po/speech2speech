@@ -4,31 +4,11 @@ import time
 
 import gradio as gr
 import openai
-from elevenlabslib import ElevenLabsUser
+
+from elevenlabs import text_to_speech
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
-
-
-def get_make_voice(voice: str, audio_path: str = None):
-    user = ElevenLabsUser(os.environ["ELEVENLABS_API_KEY"])
-    _available_voices = user.get_voices_by_name(voice)
-    if _available_voices is not None:
-        log.info(f"Voice {voice} already exists, found {_available_voices}.")
-        return _available_voices[0]
-    if user.get_voice_clone_available():
-        # Create the new voice by uploading the sample as bytes
-        assert audio_path is not None, "audio_path must be provided"
-        newVoice = user.clone_voice_bytes(
-            voice, {audio_path: open(audio_path, "rb").read()})
-        return newVoice
-
-def text_to_speech(text: str, voice: str = "Hugo"):
-    log.info(f"Generating audio using voice {voice}...")
-    time_start = time.time()
-    _voice = get_make_voice(voice)
-    _voice.generate_and_play_audio(text, playInBackground=False)
-    log.info(f"Audio duration: {time.time() - time_start:.2f} seconds")
 
 
 def run(audio, context, model, max_tokens, temperature, voice):
@@ -86,7 +66,7 @@ interface = gr.Interface(
         gr.Slider(minimum=1, maximum=100, value=20,
                   label="Max tokens", step=1),
         gr.Slider(minimum=0.0, maximum=1.0, value=0.5, label="Temperature"),
-        gr.Dropdown(choices=["Hugo", "Adam", "Rachel"], value="Hugo"),
+        gr.Dropdown(choices=["don", "barry", "joe", "Hugo", "Adam", "Rachel"], value="don"),
     ],
     [
         gr.Textbox(lines=2, label="Output")

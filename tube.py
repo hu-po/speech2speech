@@ -35,7 +35,7 @@ def extract_audio(url: str, label: str, start_minute: float = 0, duration: int =
     start_time_formatted = start_time_formatted[:11] + start_time_formatted[12:]
 
     # Set the output path using the audio file name
-    output_path = video_path.parent / f"{label}.mp3"
+    output_path = video_path.parent / f"{label}.wav"
 
     # Run ffmpeg to extract the audio
     cmd = ['ffmpeg', '-i', str(video_path), '-ss', start_time_formatted]
