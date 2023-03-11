@@ -5,7 +5,7 @@ import time
 import gradio as gr
 
 from openailib import speech_to_text, fake_conversation
-from elevenlabs import text_to_speech
+from elevenlabs import text_to_speech, get_make_voice
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -14,6 +14,9 @@ NAMES = ["Joe", "Barry", "Don", "Hugo", "Adam", "Rachel"]
 
 
 def run(voices, iam, audio, model, max_tokens, temperature):
+    for voice in voices:
+        assert get_make_voice(voice) is not None, f"Voice {voice} does not exist"
+    assert iam in voices, f"I am {iam} but I don't have a voice"
     request = speech_to_text(audio)
     response = fake_conversation(
         voices, iam, request, model=model, max_tokens=max_tokens, temperature=temperature)
