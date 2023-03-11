@@ -21,12 +21,8 @@ def run(voices, iam, audio, model, max_tokens, temperature):
         for name in NAMES:
             if line.startswith(name):
                 character, text = line.split(":")
-                if character == 'Joe':
-                    character = 'joe'
-                if character == 'Don':
-                    character = 'don'
                 text_to_speech(text, character)
-
+    return f"--Request--\n{request}\n\n--Response--\n{response}"
 
 # Create interface
 interface = gr.Interface(
@@ -37,7 +33,7 @@ interface = gr.Interface(
         gr.Audio(source="microphone", type="filepath"),
         gr.Dropdown(choices=["gpt-3.5-turbo"],
                     label='model', value="gpt-3.5-turbo"),
-        gr.Slider(minimum=1, maximum=100, value=100,
+        gr.Slider(minimum=1, maximum=500, value=200,
                   label="Max tokens", step=1),
         gr.Slider(minimum=0.0, maximum=1.0, value=0.5, label="Temperature"),
 

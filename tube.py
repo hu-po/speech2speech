@@ -20,7 +20,8 @@ parser.add_argument('-s', '--start-time', type=float, default=0, help='the start
 parser.add_argument('-d', '--duration', type=int, help='the duration in seconds for the extracted audio (default: 60)')
 
 
-def extract_audio(url: str, label: str, start_minute: float = 0, duration: int = None):
+# 200 seconds seems to be max duration for single clips
+def extract_audio(url: str, label: str, start_minute: float = 0, duration: int = 200):
     
     # Download the YouTube video
     youtube_object = YouTube(url)
