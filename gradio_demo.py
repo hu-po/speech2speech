@@ -3,7 +3,10 @@ import logging
 import os
 import random
 import time
-from typing import Dict, List
+from typing import Dict
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+import dataclasses
 
 import gradio as gr
 import sounddevice as sd
@@ -27,20 +30,59 @@ with open(YAML_FILEPATH, 'r') as file:
     NAMES = [name for name in _dict.keys()]
 DEFAULT_VOICES = random.choices(NAMES, k=2)
 DEFAULT_IAM = random.choice(DEFAULT_VOICES)
+COLORS = ['#FFA07A', '#F08080', '#AFEEEE', '#B0E0E6', '#DDA0DD', '#FFFFE0', '#F0E68C', '#90EE90', '#87CEFA', '#FFB6C1']
 
-def poll_audio(audio):
-    return ''
+dataclasses.dataclass
+class Speaker:
+    name: str
+    voice: ElevenLabsVoice
+    color: str
+    # descriptions for each user to better promopt chatgpt
 
-def conversation(names, iam, audio, model, max_tokens, temperature, timeout):
+    def __init__(self, name, voice, color):
+        self.name = name
+        self.voice = voice
+        self.color = color
+
+async def text_to_speechbytes_async(text, speaker, loop):
+    with ThreadPoolExecutor() as executor:
+        speech_bytes = await loop.run_in_executor(executor, text_to_speechbytes, text, speaker.voice)
+    return speech_bytes
+
+
+async def play_history(history):
+    loop = asyncio.get_event_loop()
+
+    # Create a list of tasks for all text_to_speechbytes function calls
+    tasks = [text_to_speechbytes_async(text, speaker, loop) for speaker, text in history]
+
+    # Run tasks concurrently, waiting for the first one to complete
+    for speech_bytes in await asyncio.gather(*tasks):
+        audioFile = io.BytesIO(speech_bytes)
+        soundFile = sf.SoundFile(audioFile)
+        sd.play(soundFile.read(), samplerate=soundFile.samplerate, blocking=True)
+
+def conversation(names, iam, audio, model, max_tokens, temperature, timeout, samplerate, channels):
     assert iam in names, f"I am {iam} but I don't have a voice"
-    loaded_voices: Dict[str, ElevenLabsVoice] = {}
-    for name in names:
+    speakers: Dict[str, Speaker] = {}
+    for i, name in enumerate(names):
         assert check_voice_exists(
             name) is not None, f"Voice {name} does not exist"
-        loaded_voices[name] = get_make_voice(name)
+        speakers[name] = Speaker(
+            name = name,
+            voice = get_make_voice(name),
+            color = COLORS[i % len(COLORS)],
+        )
     request = speech_to_text(audio)
+
+    # Add request to history for output printint
+    history_html = []
+    _bubble = f"<div style='background-color: {speakers[iam].color}; border-radius: 5px; padding: 5px; margin: 5px;'>{request}</div>"
+    history_html.append(_bubble)
+    
     response = fake_conversation(names, iam, request, model=model, max_tokens=max_tokens, temperature=temperature)
     
+    # Start gathering a history of text to speech
     history = []
     for line in response.splitlines():
         try:
@@ -50,22 +92,16 @@ def conversation(names, iam, audio, model, max_tokens, temperature, timeout):
             assert ":" in line, f"Line {line} does not have a colon"
             name, text = line.split(":")
             assert name in NAMES, f"Name {name} is not in {NAMES}"
-            voice = loaded_voices[name]
+            speaker = speakers[name]
             assert len(text) > 0, f"Text {text} is empty"
-            history.append((voice, text))
+            history.append((speaker, text))
+            _bubble = f"<div style='background-color: {speaker.color}; border-radius: 5px; padding: 5px; margin: 5px;'>{text}</div>"
+            history_html.append(_bubble)
         except AssertionError as e:
             log.warning(e)
             continue
-
-    for voice, text in history:
-        speech_bytes: bytes = text_to_speechbytes(text, voice)
-        audioFile = io.BytesIO(speech_bytes)
-        soundFile = sf.SoundFile(audioFile)
-        sd.play(soundFile.read(), samplerate=soundFile.samplerate, blocking=True)
-        # Interrupt buffer
-        time.sleep(random.uniform(1, 0.5))
-
-    return ''
+    asyncio.run(play_history(history))
+    return ''.join(history_html)
 
 
 def make_voices(voices_yaml: str):
@@ -114,11 +150,11 @@ with gr.Blocks() as demo:
             gr_timeout = gr.Slider(minimum=1, maximum=60, value=10,
                                    label="Timeout on individual agents", step=1)
             gr_samplerate = gr.Slider(minimum=1, maximum=48000, value=48000,
-                                      label="Samplerate", step=1),
+                                      label="Samplerate", step=1)
             gr_channels = gr.Slider(minimum=1, maximum=2, value=1,
-                                    label="Channels", step=1),
+                                    label="Channels", step=1)
         gr_convo_button = gr.Button(label="Start conversation")
-        gr_convo_output = gr.Textbox(lines=2, label="Output")
+        gr_convo_output = gr.HTML()
     with gr.Tab("Make Voices"):
         gr_voice_data = gr.Textbox(
             lines=25, label="YAML for voices", value=VOICES_YAML)
@@ -126,8 +162,7 @@ with gr.Blocks() as demo:
         gr_make_voice_output = gr.Textbox(lines=2, label="Output")
 
     gr_convo_button.click(conversation,
-                          inputs=[gr_chars, gr_iam, gr_mic, gr_model,
-                                  gr_max_tokens, gr_temperature],
+                          inputs=[gr_chars, gr_iam, gr_mic, gr_model, gr_max_tokens, gr_temperature, gr_timeout, gr_samplerate, gr_channels],
                           outputs=[gr_convo_output],
                           )
     gr_make_voice_button.click(
