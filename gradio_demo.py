@@ -6,7 +6,7 @@ import time
 from typing import Dict
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-import dataclasses
+from dataclasses import dataclass
 
 import gradio as gr
 import sounddevice as sd
@@ -21,31 +21,24 @@ from tube import extract_audio
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
-# TODO: better way to do this
-YAML_FILEPATH = os.path.join(os.path.dirname(__file__), "voices.yaml")
-with open(YAML_FILEPATH, 'r') as file:
-    VOICES_YAML = file.read()
-with open(YAML_FILEPATH, 'r') as file:
-    _dict = yaml.safe_load(file)
-    NAMES = [name for name in _dict.keys()]
-DEFAULT_VOICES = random.choices(NAMES, k=2)
-DEFAULT_IAM = random.choice(DEFAULT_VOICES)
 COLORS = ['#FFA07A', '#F08080', '#AFEEEE', '#B0E0E6', '#DDA0DD',
           '#FFFFE0', '#F0E68C', '#90EE90', '#87CEFA', '#FFB6C1']
+YAML_FILEPATH = os.path.join(os.path.dirname(__file__), "voices.yaml")
 
-dataclasses.dataclass
+with open(YAML_FILEPATH, 'r') as file:
+    DEFAULT_VOICES_STR = file.read()
+with open(YAML_FILEPATH, 'r') as file:
+    VOICES = yaml.safe_load(file)
+    NAMES = [name for name in VOICES.keys()]
+DEFAULT_VOICES = random.choices(NAMES, k=2)
+DEFAULT_IAM = random.choice(DEFAULT_VOICES)
 
-
+@dataclass
 class Speaker:
     name: str
     voice: ElevenLabsVoice
     color: str
-    # descriptions for each user to better promopt chatgpt
-
-    def __init__(self, name, voice, color):
-        self.name = name
-        self.voice = voice
-        self.color = color
+    description: str = None
 
 
 async def text_to_speechbytes_async(text, speaker, loop):
@@ -69,6 +62,7 @@ async def play_history(history):
 
 
 def conversation(names, iam, audio, model, max_tokens, temperature, timeout, samplerate, channels):
+    global VOICES
     assert iam in names, f"I am {iam} but I don't have a voice"
     speakers: Dict[str, Speaker] = {}
     for i, name in enumerate(names):
@@ -78,6 +72,7 @@ def conversation(names, iam, audio, model, max_tokens, temperature, timeout, sam
             name=name,
             voice=get_make_voice(name),
             color=COLORS[i % len(COLORS)],
+            description=VOICES[name].get("description", None),
         )
     request = speech_to_text(audio)
 
@@ -86,11 +81,9 @@ def conversation(names, iam, audio, model, max_tokens, temperature, timeout, sam
     _bubble = f"<div style='background-color: {speakers[iam].color}; border-radius: 5px; padding: 5px; margin: 5px;'>{request}</div>"
     history_html.append(_bubble)
 
-    response = fake_conversation(
-        names, iam, request, model=model, max_tokens=max_tokens, temperature=temperature)
-
-    # Start gathering a history of text to speech
     history = []
+    _speakers = [s for s in speakers.values()]
+    response = fake_conversation(_speakers, history, iam, request, model=model, max_tokens=max_tokens, temperature=temperature)
     for line in response.splitlines():
         try:
             # check if line is empty
@@ -112,9 +105,11 @@ def conversation(names, iam, audio, model, max_tokens, temperature, timeout, sam
 
 
 def make_voices(voices_yaml: str):
+    global VOICES
     try:
-        voice_dict: Dict = yaml.safe_load(voices_yaml)
-        for name, videos in voice_dict.items():
+        VOICES = yaml.safe_load(voices_yaml)
+        for name, metadata in VOICES.items():
+            videos = metadata['references']
             assert isinstance(name, str), f"Name {name} is not a string"
             assert isinstance(videos, list), f"Videos {videos} is not a list"
             if check_voice_exists(name):
@@ -149,7 +144,7 @@ with gr.Blocks() as demo:
             type="filepath",
         )
         with gr.Accordion("Settings", open=False):
-            gr_model = gr.Dropdown(choices=["gpt-3.5-turbo"],
+            gr_model = gr.Dropdown(choices=["gpt-3.5-turbo", "gpt-4"],
                                    label='model', value="gpt-3.5-turbo")
             gr_max_tokens = gr.Slider(minimum=1, maximum=500, value=75,
                                       label="Max tokens", step=1)
@@ -165,7 +160,7 @@ with gr.Blocks() as demo:
         gr_convo_output = gr.HTML()
     with gr.Tab("Make Voices"):
         gr_voice_data = gr.Textbox(
-            lines=25, label="YAML for voices", value=VOICES_YAML)
+            lines=25, label="YAML for voices", value=DEFAULT_VOICES_STR)
         gr_make_voice_button = gr.Button(label="Make voice")
         gr_make_voice_output = gr.Textbox(lines=2, label="Output")
 
