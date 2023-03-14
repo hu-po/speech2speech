@@ -34,7 +34,7 @@ def conversation(voices, iam, audio, model, max_tokens, temperature):
             if line.startswith(name):
                 character, text = line.split(":")
                 text_to_speech(text, character)
-    return history
+    return ''
 
 
 def make_voices(voices_yaml: str):
@@ -57,7 +57,8 @@ def make_voices(voices_yaml: str):
                 audio_paths.append(output_path)
             get_make_voice(name, audio_paths)
     except Exception as e:
-        return f"Error: {e}"
+        raise e
+        # return f"Error: {e}"
     return "Success"
 
 
@@ -66,10 +67,10 @@ with gr.Blocks() as demo:
         gr_chars = gr.CheckboxGroup(NAMES, label="Characters")
         gr_iam = gr.Dropdown(choices=NAMES, label="I am")
         gr_mic = gr.Audio(source="microphone", type="filepath")
-        with gr.Accordion("Settings", collapsed=True):
+        with gr.Accordion("Settings", open=False):
             gr_model = gr.Dropdown(choices=["gpt-3.5-turbo"],
                                    label='model', value="gpt-3.5-turbo")
-            gr_max_tokens = gr.Slider(minimum=1, maximum=500, value=100,
+            gr_max_tokens = gr.Slider(minimum=1, maximum=500, value=75,
                                       label="Max tokens", step=1)
             gr_temperature = gr.Slider(
                 minimum=0.0, maximum=1.0, value=0.5, label="Temperature")

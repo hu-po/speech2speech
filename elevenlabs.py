@@ -29,14 +29,12 @@ def get_make_voice(voice: str, audio_path: List[str] = None):
         return _voice
     else:
         if USER.get_voice_clone_available():
-            # Create the new voice by uploading the sample as bytes
             assert audio_path is not None, "audio_path must be provided"
-            log.info(f"Cloning voice {voice}...")
-            # TODO: This is creating a voice gfrom a single youtube vid
-            # we could do multiple youtube vids
             assert isinstance(audio_path, list), "audio_path must be a list"
+            log.info(f"Cloning voice {voice}...")
             _audio_source_dict = {
-                audio_path: open(audio_path, "rb").read() for audio_path in audio_path
+                # Audio path is a PosixPath
+                _.name: open(_, "rb").read() for _ in audio_path
             }
             newVoice = USER.clone_voice_bytes(voice, _audio_source_dict)
             return newVoice
