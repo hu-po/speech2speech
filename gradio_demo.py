@@ -1,12 +1,18 @@
-import os
+import io
 import logging
-import yaml
+import os
+import random
+import time
 from typing import Dict, List
 
 import gradio as gr
+import sounddevice as sd
+import soundfile as sf
+import yaml
 
-from openailib import speech_to_text, fake_conversation
-from elevenlabs import text_to_speech, get_make_voice, check_voice_exists
+from elevenlabs import (ElevenLabsVoice, check_voice_exists, get_make_voice,
+                        text_to_speechbytes)
+from openailib import fake_conversation, speech_to_text
 from tube import extract_audio
 
 logging.basicConfig(level=logging.INFO)
@@ -19,21 +25,46 @@ with open(YAML_FILEPATH, 'r') as file:
 with open(YAML_FILEPATH, 'r') as file:
     _dict = yaml.safe_load(file)
     NAMES = [name for name in _dict.keys()]
+DEFAULT_VOICES = random.choices(NAMES, k=2)
+DEFAULT_IAM = random.choice(DEFAULT_VOICES)
 
+def poll_audio(audio):
+    return ''
 
-def conversation(voices, iam, audio, model, max_tokens, temperature):
-    for voice in voices:
-        assert get_make_voice(
-            voice) is not None, f"Voice {voice} does not exist"
-    assert iam in voices, f"I am {iam} but I don't have a voice"
+def conversation(names, iam, audio, model, max_tokens, temperature, timeout):
+    assert iam in names, f"I am {iam} but I don't have a voice"
+    loaded_voices: Dict[str, ElevenLabsVoice] = {}
+    for name in names:
+        assert check_voice_exists(
+            name) is not None, f"Voice {name} does not exist"
+        loaded_voices[name] = get_make_voice(name)
     request = speech_to_text(audio)
-    response = fake_conversation(
-        voices, iam, request, model=model, max_tokens=max_tokens, temperature=temperature)
+    response = fake_conversation(names, iam, request, model=model, max_tokens=max_tokens, temperature=temperature)
+    
+    history = []
     for line in response.splitlines():
-        for name in NAMES:
-            if line.startswith(name):
-                character, text = line.split(":")
-                text_to_speech(text, character)
+        try:
+            # check if line is empty
+            if not line:
+                continue
+            assert ":" in line, f"Line {line} does not have a colon"
+            name, text = line.split(":")
+            assert name in NAMES, f"Name {name} is not in {NAMES}"
+            voice = loaded_voices[name]
+            assert len(text) > 0, f"Text {text} is empty"
+            history.append((voice, text))
+        except AssertionError as e:
+            log.warning(e)
+            continue
+
+    for voice, text in history:
+        speech_bytes: bytes = text_to_speechbytes(text, voice)
+        audioFile = io.BytesIO(speech_bytes)
+        soundFile = sf.SoundFile(audioFile)
+        sd.play(soundFile.read(), samplerate=soundFile.samplerate, blocking=True)
+        # Interrupt buffer
+        time.sleep(random.uniform(1, 0.5))
+
     return ''
 
 
@@ -64,9 +95,15 @@ def make_voices(voices_yaml: str):
 
 with gr.Blocks() as demo:
     with gr.Tab("Conversation"):
-        gr_chars = gr.CheckboxGroup(NAMES, label="Characters")
-        gr_iam = gr.Dropdown(choices=NAMES, label="I am")
-        gr_mic = gr.Audio(source="microphone", type="filepath")
+        
+        gr_chars = gr.CheckboxGroup(NAMES, label="Characters", value=DEFAULT_VOICES)
+        gr_iam = gr.Dropdown(choices=NAMES, label="I am", value=DEFAULT_IAM)
+        gr_mic = gr.Audio(
+            source="microphone",
+            # value=poll_audio,
+            # every=3,
+            type="filepath",
+            )
         with gr.Accordion("Settings", open=False):
             gr_model = gr.Dropdown(choices=["gpt-3.5-turbo"],
                                    label='model', value="gpt-3.5-turbo")
@@ -74,6 +111,12 @@ with gr.Blocks() as demo:
                                       label="Max tokens", step=1)
             gr_temperature = gr.Slider(
                 minimum=0.0, maximum=1.0, value=0.5, label="Temperature")
+            gr_timeout = gr.Slider(minimum=1, maximum=60, value=10,
+                                   label="Timeout on individual agents", step=1)
+            gr_samplerate = gr.Slider(minimum=1, maximum=48000, value=48000,
+                                      label="Samplerate", step=1),
+            gr_channels = gr.Slider(minimum=1, maximum=2, value=1,
+                                    label="Channels", step=1),
         gr_convo_button = gr.Button(label="Start conversation")
         gr_convo_output = gr.Textbox(lines=2, label="Output")
     with gr.Tab("Make Voices"):

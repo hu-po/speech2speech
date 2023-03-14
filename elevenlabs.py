@@ -1,10 +1,10 @@
+import argparse
 import logging
 import os
 import time
-from typing import List
+from typing import List, Union
 
-from elevenlabslib import ElevenLabsUser
-import argparse
+from elevenlabslib import ElevenLabsUser, ElevenLabsVoice
 
 from utils import timeit
 
@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 USER = ElevenLabsUser(os.environ["ELEVENLABS_API_KEY"])
 
 
-def check_voice_exists(voice: str) -> bool:
+def check_voice_exists(voice: Union[ElevenLabsVoice, str]) -> Union[ElevenLabsVoice, None]:
     log.info(f"Getting voice {voice}...")
     _available_voices = USER.get_voices_by_name(voice)
     if _available_voices:
@@ -23,7 +23,7 @@ def check_voice_exists(voice: str) -> bool:
     return None
 
 @timeit
-def get_make_voice(voice: str, audio_path: List[str] = None):
+def get_make_voice(voice: Union[ElevenLabsVoice, str], audio_path: List[str] = None) -> ElevenLabsVoice:
     _voice = check_voice_exists(voice)
     if _voice is not None:
         return _voice
@@ -42,12 +42,19 @@ def get_make_voice(voice: str, audio_path: List[str] = None):
 
 
 @timeit
-def text_to_speech(text: str, voice: str = "Hugo"):
+def text_to_speech(text: str, voice: ElevenLabsVoice):
     log.info(f"Generating audio using voice {voice}...")
     time_start = time.time()
-    _voice = get_make_voice(voice)
-    _voice.generate_and_play_audio(text, playInBackground=False)
-    log.info(f"Audio duration: {time.time() - time_start:.2f} seconds")
+    voice.generate_and_play_audio(text, playInBackground=False)
+    duration = time.time() - time_start
+    return duration
+
+
+@timeit
+def text_to_speechbytes(text: str, voice: ElevenLabsVoice):
+    log.info(f"Generating audio for voice {voice} text {text}...")
+    audio_bytes = voice.generate_audio_bytes(text)
+    return audio_bytes
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Extract audio from YouTube videos using links from a CSV file.')
