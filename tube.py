@@ -39,7 +39,7 @@ def extract_audio(url: str, label: str, start_minute: float = 0, duration: int =
     output_path = video_path.parent / f"{label}.wav"
 
     # Run ffmpeg to extract the audio
-    cmd = ['ffmpeg', '-i', str(video_path), '-ss', start_time_formatted]
+    cmd = ['ffmpeg', '-y', '-i', str(video_path), '-ss', start_time_formatted]
     if duration is not None:
         # Format the duration in HH:MM:SS.mmm format
         duration_formatted = str(datetime.timedelta(seconds=duration))

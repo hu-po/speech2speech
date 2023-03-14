@@ -1,0 +1,21 @@
+Barry:
+  - url: "https://youtu.be/MS5UjNKw_1M"
+    start_minute: 0
+    duration_seconds: 120
+Joe:
+  - url: "https://youtu.be/uhjVn-J_cVs"
+    start_minute: 0
+    duration_seconds: 120
+Don:
+  - url: "https://youtu.be/f0UB06v7yLY"
+    start_minute: 0
+    duration_seconds: 120
+Elon:
+  - url: "https://youtu.be/OCV5F88TYnk"
+    start_minute: 0.5
+    duration_seconds: 120
+Lex:
+  - url: "https://youtu.be/QqRV5FD8ob4"
+    start_minute: 0
+    duration_seconds: 120
+Hugo: []

@@ -10,7 +10,7 @@ from elevenlabs import text_to_speech, get_make_voice
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
-NAMES = ["Joe", "Barry", "Don", "Hugo", "Adam", "Rachel"]
+NAMES = ["Joe", "Barry", "Don", "Hugo", "Lex", "Elon"]
 
 
 def run(voices, iam, audio, model, max_tokens, temperature):
@@ -36,10 +36,9 @@ interface = gr.Interface(
         gr.Audio(source="microphone", type="filepath"),
         gr.Dropdown(choices=["gpt-3.5-turbo"],
                     label='model', value="gpt-3.5-turbo"),
-        gr.Slider(minimum=1, maximum=500, value=200,
+        gr.Slider(minimum=1, maximum=500, value=100,
                   label="Max tokens", step=1),
         gr.Slider(minimum=0.0, maximum=1.0, value=0.5, label="Temperature"),
-
     ],
     [
         gr.Textbox(lines=2, label="Output")

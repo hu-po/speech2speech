@@ -13,26 +13,35 @@ log = logging.getLogger(__name__)
 
 USER = ElevenLabsUser(os.environ["ELEVENLABS_API_KEY"])
 
-@timeit
-def get_make_voice(voice: str, audio_path: List[str] = None):
+
+def check_voice_exists(voice: str) -> bool:
     log.info(f"Getting voice {voice}...")
     _available_voices = USER.get_voices_by_name(voice)
     if _available_voices:
         log.info(f"Voice {voice} already exists, found {_available_voices}.")
         return _available_voices[0]
-    if USER.get_voice_clone_available():
-        # Create the new voice by uploading the sample as bytes
-        assert audio_path is not None, "audio_path must be provided"
-        log.info(f"Cloning voice {voice}...")
-        # TODO: This is creating a voice gfrom a single youtube vid
-        # we could do multiple youtube vids
-        assert isinstance(audio_path, list), "audio_path must be a list"
-        _audio_source_dict = {
-            audio_path: open(audio_path, "rb").read() for audio_path in audio_path
-        }
-        newVoice = USER.clone_voice_bytes(voice, _audio_source_dict)
-        return newVoice
-    log.warning(f"Voice {voice} does not exist and cloning is not available.")
+    return None
+
+@timeit
+def get_make_voice(voice: str, audio_path: List[str] = None):
+    _voice = check_voice_exists(voice)
+    if _voice is not None:
+        return _voice
+    else:
+        if USER.get_voice_clone_available():
+            # Create the new voice by uploading the sample as bytes
+            assert audio_path is not None, "audio_path must be provided"
+            log.info(f"Cloning voice {voice}...")
+            # TODO: This is creating a voice gfrom a single youtube vid
+            # we could do multiple youtube vids
+            assert isinstance(audio_path, list), "audio_path must be a list"
+            _audio_source_dict = {
+                audio_path: open(audio_path, "rb").read() for audio_path in audio_path
+            }
+            newVoice = USER.clone_voice_bytes(voice, _audio_source_dict)
+            return newVoice
+    raise ValueError(f"Voice {voice} does not exist and cloning is not available.")
+
 
 @timeit
 def text_to_speech(text: str, voice: str = "Hugo"):
