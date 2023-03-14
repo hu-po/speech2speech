@@ -3,6 +3,8 @@ import os
 import time
 from typing import List
 
+from utils import timeit
+
 import openai
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -10,6 +12,7 @@ logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 
+@timeit
 def speech_to_text(audio_path):
     log.info("Transcribing audio...")
     time_start = time.time()
@@ -20,6 +23,7 @@ def speech_to_text(audio_path):
     return text
 
 
+@timeit
 def top_response(prompt, model="gpt-3.5-turbo", max_tokens=20, temperature=0.8):
     time_start = time.time()
     log.info(f"GPT-3 Starting")
@@ -36,6 +40,7 @@ def top_response(prompt, model="gpt-3.5-turbo", max_tokens=20, temperature=0.8):
     return response
 
 
+@timeit
 def respond_with_system_context(request, context, **kwargs):
     prompt = [
         {
@@ -50,7 +55,8 @@ def respond_with_system_context(request, context, **kwargs):
     return top_response(prompt, **kwargs)
 
 
-def fake_conversation(names: List[str], iam: str, request:str, **kwargs):
+@timeit
+def fake_conversation(names: List[str], iam: str, request: str, **kwargs):
     names_as_sentence = ", ".join(names[:-1]) + " and " + names[-1]
     prompt = [
         {

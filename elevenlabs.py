@@ -1,31 +1,40 @@
 import logging
 import os
 import time
+from typing import List
 
 from elevenlabslib import ElevenLabsUser
 import argparse
 
+from utils import timeit
+
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
+USER = ElevenLabsUser(os.environ["ELEVENLABS_API_KEY"])
 
-def get_make_voice(voice: str, audio_path: str = None):
+@timeit
+def get_make_voice(voice: str, audio_path: List[str] = None):
     log.info(f"Getting voice {voice}...")
-    user = ElevenLabsUser(os.environ["ELEVENLABS_API_KEY"])
-    _available_voices = user.get_voices_by_name(voice)
+    _available_voices = USER.get_voices_by_name(voice)
     if _available_voices:
         log.info(f"Voice {voice} already exists, found {_available_voices}.")
         return _available_voices[0]
-    if user.get_voice_clone_available():
+    if USER.get_voice_clone_available():
         # Create the new voice by uploading the sample as bytes
         assert audio_path is not None, "audio_path must be provided"
         log.info(f"Cloning voice {voice}...")
-        newVoice = user.clone_voice_bytes(
-            voice, {audio_path: open(audio_path, "rb").read()})
+        # TODO: This is creating a voice gfrom a single youtube vid
+        # we could do multiple youtube vids
+        assert isinstance(audio_path, list), "audio_path must be a list"
+        _audio_source_dict = {
+            audio_path: open(audio_path, "rb").read() for audio_path in audio_path
+        }
+        newVoice = USER.clone_voice_bytes(voice, _audio_source_dict)
         return newVoice
     log.warning(f"Voice {voice} does not exist and cloning is not available.")
 
-
+@timeit
 def text_to_speech(text: str, voice: str = "Hugo"):
     log.info(f"Generating audio using voice {voice}...")
     time_start = time.time()
