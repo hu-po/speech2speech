@@ -30,9 +30,12 @@ with open(YAML_FILEPATH, 'r') as file:
     NAMES = [name for name in _dict.keys()]
 DEFAULT_VOICES = random.choices(NAMES, k=2)
 DEFAULT_IAM = random.choice(DEFAULT_VOICES)
-COLORS = ['#FFA07A', '#F08080', '#AFEEEE', '#B0E0E6', '#DDA0DD', '#FFFFE0', '#F0E68C', '#90EE90', '#87CEFA', '#FFB6C1']
+COLORS = ['#FFA07A', '#F08080', '#AFEEEE', '#B0E0E6', '#DDA0DD',
+          '#FFFFE0', '#F0E68C', '#90EE90', '#87CEFA', '#FFB6C1']
 
 dataclasses.dataclass
+
+
 class Speaker:
     name: str
     voice: ElevenLabsVoice
@@ -44,6 +47,7 @@ class Speaker:
         self.voice = voice
         self.color = color
 
+
 async def text_to_speechbytes_async(text, speaker, loop):
     with ThreadPoolExecutor() as executor:
         speech_bytes = await loop.run_in_executor(executor, text_to_speechbytes, text, speaker.voice)
@@ -54,13 +58,15 @@ async def play_history(history):
     loop = asyncio.get_event_loop()
 
     # Create a list of tasks for all text_to_speechbytes function calls
-    tasks = [text_to_speechbytes_async(text, speaker, loop) for speaker, text in history]
+    tasks = [text_to_speechbytes_async(
+        text, speaker, loop) for speaker, text in history]
 
     # Run tasks concurrently, waiting for the first one to complete
     for speech_bytes in await asyncio.gather(*tasks):
         audioFile = io.BytesIO(speech_bytes)
         soundFile = sf.SoundFile(audioFile)
         sd.play(soundFile.read(), samplerate=soundFile.samplerate, blocking=True)
+
 
 def conversation(names, iam, audio, model, max_tokens, temperature, timeout, samplerate, channels):
     assert iam in names, f"I am {iam} but I don't have a voice"
@@ -69,9 +75,9 @@ def conversation(names, iam, audio, model, max_tokens, temperature, timeout, sam
         assert check_voice_exists(
             name) is not None, f"Voice {name} does not exist"
         speakers[name] = Speaker(
-            name = name,
-            voice = get_make_voice(name),
-            color = COLORS[i % len(COLORS)],
+            name=name,
+            voice=get_make_voice(name),
+            color=COLORS[i % len(COLORS)],
         )
     request = speech_to_text(audio)
 
@@ -79,9 +85,10 @@ def conversation(names, iam, audio, model, max_tokens, temperature, timeout, sam
     history_html = []
     _bubble = f"<div style='background-color: {speakers[iam].color}; border-radius: 5px; padding: 5px; margin: 5px;'>{request}</div>"
     history_html.append(_bubble)
-    
-    response = fake_conversation(names, iam, request, model=model, max_tokens=max_tokens, temperature=temperature)
-    
+
+    response = fake_conversation(
+        names, iam, request, model=model, max_tokens=max_tokens, temperature=temperature)
+
     # Start gathering a history of text to speech
     history = []
     for line in response.splitlines():
@@ -131,15 +138,16 @@ def make_voices(voices_yaml: str):
 
 with gr.Blocks() as demo:
     with gr.Tab("Conversation"):
-        
-        gr_chars = gr.CheckboxGroup(NAMES, label="Characters", value=DEFAULT_VOICES)
+
+        gr_chars = gr.CheckboxGroup(
+            NAMES, label="Characters", value=DEFAULT_VOICES)
         gr_iam = gr.Dropdown(choices=NAMES, label="I am", value=DEFAULT_IAM)
         gr_mic = gr.Audio(
             source="microphone",
             # value=poll_audio,
             # every=3,
             type="filepath",
-            )
+        )
         with gr.Accordion("Settings", open=False):
             gr_model = gr.Dropdown(choices=["gpt-3.5-turbo"],
                                    label='model', value="gpt-3.5-turbo")
@@ -162,7 +170,8 @@ with gr.Blocks() as demo:
         gr_make_voice_output = gr.Textbox(lines=2, label="Output")
 
     gr_convo_button.click(conversation,
-                          inputs=[gr_chars, gr_iam, gr_mic, gr_model, gr_max_tokens, gr_temperature, gr_timeout, gr_samplerate, gr_channels],
+                          inputs=[gr_chars, gr_iam, gr_mic, gr_model, gr_max_tokens,
+                                  gr_temperature, gr_timeout, gr_samplerate, gr_channels],
                           outputs=[gr_convo_output],
                           )
     gr_make_voice_button.click(
