@@ -1,9 +1,14 @@
-import argparse
+import asyncio
+import io
 import logging
 import os
 import time
-from typing import List, Union
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
+from typing import Dict, List, Union
 
+import sounddevice as sd
+import soundfile as sf
 from elevenlabslib import ElevenLabsUser, ElevenLabsVoice
 
 from utils import timeit
@@ -14,6 +19,34 @@ log = logging.getLogger(__name__)
 USER = ElevenLabsUser(os.environ["ELEVENLABS_API_KEY"])
 
 
+@dataclass
+class Speaker:
+    name: str
+    voice: ElevenLabsVoice
+    color: str
+    description: str = None
+
+
+async def text_to_speechbytes_async(text, speaker, loop):
+    with ThreadPoolExecutor() as executor:
+        speech_bytes = await loop.run_in_executor(executor, text_to_speechbytes, text, speaker.voice)
+    return speech_bytes
+
+
+async def play_history(history):
+    loop = asyncio.get_event_loop()
+
+    # Create a list of tasks for all text_to_speechbytes function calls
+    tasks = [text_to_speechbytes_async(
+        text, speaker, loop) for speaker, text in history]
+
+    # Run tasks concurrently, waiting for the first one to complete
+    for speech_bytes in await asyncio.gather(*tasks):
+        audioFile = io.BytesIO(speech_bytes)
+        soundFile = sf.SoundFile(audioFile)
+        sd.play(soundFile.read(), samplerate=soundFile.samplerate, blocking=True)
+
+
 def check_voice_exists(voice: Union[ElevenLabsVoice, str]) -> Union[ElevenLabsVoice, None]:
     log.info(f"Getting voice {voice}...")
     _available_voices = USER.get_voices_by_name(voice)
@@ -21,6 +54,7 @@ def check_voice_exists(voice: Union[ElevenLabsVoice, str]) -> Union[ElevenLabsVo
         log.info(f"Voice {voice} already exists, found {_available_voices}.")
         return _available_voices[0]
     return None
+
 
 @timeit
 def get_make_voice(voice: Union[ElevenLabsVoice, str], audio_path: List[str] = None) -> ElevenLabsVoice:
@@ -38,7 +72,8 @@ def get_make_voice(voice: Union[ElevenLabsVoice, str], audio_path: List[str] = N
             }
             newVoice = USER.clone_voice_bytes(voice, _audio_source_dict)
             return newVoice
-    raise ValueError(f"Voice {voice} does not exist and cloning is not available.")
+    raise ValueError(
+        f"Voice {voice} does not exist and cloning is not available.")
 
 
 @timeit
@@ -55,16 +90,3 @@ def text_to_speechbytes(text: str, voice: ElevenLabsVoice):
     log.info(f"Generating audio for voice {voice} text {text}...")
     audio_bytes = voice.generate_audio_bytes(text)
     return audio_bytes
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Extract audio from YouTube videos using links from a CSV file.')
-    parser.add_argument('data_dir', type=str, default='tube.output', help='Path to the data directory')
-    args = parser.parse_args()
-    
-    for person in os.listdir(args.data_dir):
-        person_dir = os.path.join(args.data_dir, person)
-        for audio_file in os.listdir(person_dir):
-            if audio_file.endswith(".wav"):
-                audio_path = os.path.join(person_dir, audio_file)
-                get_make_voice(person, audio_path)
-            

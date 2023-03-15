@@ -1,20 +1,15 @@
-import io
 import logging
 import os
 import random
-import time
 from typing import Dict
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
+
 from dataclasses import dataclass
 
 import gradio as gr
-import sounddevice as sd
-import soundfile as sf
 import yaml
 
-from elevenlabs import (ElevenLabsVoice, check_voice_exists, get_make_voice,
-                        text_to_speechbytes)
+from elevenlabs import Speaker, check_voice_exists, get_make_voice, play_history
 from openailib import fake_conversation, speech_to_text
 from tube import extract_audio
 
@@ -32,33 +27,6 @@ with open(YAML_FILEPATH, 'r') as file:
     NAMES = [name for name in VOICES.keys()]
 DEFAULT_VOICES = random.choices(NAMES, k=2)
 DEFAULT_IAM = random.choice(DEFAULT_VOICES)
-
-@dataclass
-class Speaker:
-    name: str
-    voice: ElevenLabsVoice
-    color: str
-    description: str = None
-
-
-async def text_to_speechbytes_async(text, speaker, loop):
-    with ThreadPoolExecutor() as executor:
-        speech_bytes = await loop.run_in_executor(executor, text_to_speechbytes, text, speaker.voice)
-    return speech_bytes
-
-
-async def play_history(history):
-    loop = asyncio.get_event_loop()
-
-    # Create a list of tasks for all text_to_speechbytes function calls
-    tasks = [text_to_speechbytes_async(
-        text, speaker, loop) for speaker, text in history]
-
-    # Run tasks concurrently, waiting for the first one to complete
-    for speech_bytes in await asyncio.gather(*tasks):
-        audioFile = io.BytesIO(speech_bytes)
-        soundFile = sf.SoundFile(audioFile)
-        sd.play(soundFile.read(), samplerate=soundFile.samplerate, blocking=True)
 
 
 def conversation(names, iam, audio, model, max_tokens, temperature, timeout, samplerate, channels):
@@ -86,7 +54,7 @@ def conversation(names, iam, audio, model, max_tokens, temperature, timeout, sam
     response = fake_conversation(_speakers, history, iam, request, model=model, max_tokens=max_tokens, temperature=temperature)
     for line in response.splitlines():
         try:
-            # check if line is empty
+            # TODO: Add any filters here as assertion errors
             if not line:
                 continue
             assert ":" in line, f"Line {line} does not have a colon"
