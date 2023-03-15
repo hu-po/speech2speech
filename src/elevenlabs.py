@@ -11,7 +11,7 @@ import sounddevice as sd
 import soundfile as sf
 from elevenlabslib import ElevenLabsUser, ElevenLabsVoice
 
-from utils import timeit
+from .utils import timeit
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
