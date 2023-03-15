@@ -18,7 +18,9 @@ log = logging.getLogger(__name__)
 
 COLORS = ['#FFA07A', '#F08080', '#AFEEEE', '#B0E0E6', '#DDA0DD',
           '#FFFFE0', '#F0E68C', '#90EE90', '#87CEFA', '#FFB6C1']
-YAML_FILEPATH = os.path.join(os.path.dirname(__file__), "voices.yaml")
+YAML_FILEPATH = os.path.join(os.path.dirname(__file__), 
+                             "default_voices.yaml"
+                             )
 
 with open(YAML_FILEPATH, 'r') as file:
     DEFAULT_VOICES_STR = file.read()
