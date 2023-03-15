@@ -4,7 +4,7 @@ Create a conversation with GPT and anyone on any youtube video. You just need 1m
 
 Full YouTube vid:
 
-[![IMAGE_ALT](https://img.youtube.com/vi/_kHYNoccEyFs/0.jpg)](https://www.youtube.com/live/kHYNoccEyFs)
+[![IMAGE_ALT](https://img.youtube.com/vi/kHYNoccEyFs/0.jpg)](https://www.youtube.com/live/kHYNoccEyFs)
 
 ## Setup
 
