@@ -1,36 +1,30 @@
-Hugo: #HugoBuboo:
-  description: "I create content with my cat Buboo. As a programmer, I love using analogies to simplify complex concepts."
-  references:
-    - url: "https://youtu.be/MS5UjNKw_1M"
-      start_minute: 0
-      duration_seconds: 120
-Barry: #BarrackObama:
-  description: "I believe in hope and change. During my time in office, I focused on healthcare reform and promoting clean energy."
-  references:
-    - url: "https://youtu.be/MS5UjNKw_1M"
-      start_minute: 0
-      duration_seconds: 120
-Joe: #JoeBiden:
-  description: "I'm committed to unity and restoring the soul of our nation. My administration prioritizes climate change, infrastructure, and social justice."
+JoeBiden:
+  description: "Stumbles and stutters over words, uses old timey phrases."
   references:
     - url: "https://youtu.be/uhjVn-J_cVs"
       start_minute: 0
       duration_seconds: 120
-Don: #DonaldTrump:
-  description: "I'm all about making America great again. I championed economic growth, deregulation, and a strong military during my term."
+DonaldTrump:
+  description: "Bombastic quarrelsome narcisist who talks up his ideas."
   references:
     - url: "https://youtu.be/f0UB06v7yLY"
       start_minute: 0
       duration_seconds: 120
-Elon: #ElonMusk:
-  description: "I aspire to accelerate sustainable energy and make life multiplanetary. With Tesla and SpaceX, I'm constantly pushing the boundaries of innovation."
+ElonMusk:
+  description: "Visionary entrepreneur who loves low quality memes."
   references:
-    - url: "https://youtu.be/OCV5F88TYnk"
-      start_minute: 0.5
-      duration_seconds: 120
-Lex: #LexFridman:
-  description: "As a research scientist and podcast host, I explore the depths of human mind and artificial intelligence. I enjoy engaging with brilliant minds in technology, science, and philosophy."
+    - url: "https://youtu.be/DxREm3s1scA"
+      start_minute: 1.7
+      duration_seconds: 27
+    - url: "https://youtu.be/DxREm3s1scA"
+      start_minute: 18.5
+      duration_seconds: 60
+LexFridman:
+  description: "Depressing and lonely thinker, makes references to classic literature"
   references:
-    - url: "https://youtu.be/QqRV5FD8ob4"
-      start_minute: 0
-      duration_seconds: 120
+    - url: "https://youtu.be/DxREm3s1scA"
+      start_minute: 1
+      duration_seconds: 30
+    - url: "https://youtu.be/DxREm3s1scA"
+      start_minute: 41.4
+      duration_seconds: 30

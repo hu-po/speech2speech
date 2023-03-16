@@ -28,7 +28,7 @@ class ConversationState:
                  names: list = None,
                  iam: str = None,
                  model: str = "gpt-3.5-turbo",
-                 max_tokens: int = 15,
+                 max_tokens: int = 30,
                  temperature: float = 0.5,
                  history: list = None):
         self.model = model
@@ -52,8 +52,9 @@ class ConversationState:
         self.speakers: Dict[str, Speaker] = {}
         self.speakers_descriptions: str = ''
         for i, name in enumerate(self.names):
-            assert check_voice_exists(
-                name) is not None, f"Voice {name} does not exist"
+            if check_voice_exists(name) is None:
+                log.warning(f"Voice {name} does not exist")
+                continue
             _speaker = Speaker(
                 name=name,
                 voice=get_make_voice(name),
@@ -68,10 +69,14 @@ class ConversationState:
         self.system = f"You create funny conversation dialogues."
         self.system += f"This conversation is between {', '.join(self.names)}."
         self.system += "Do not introduce new characters."
-        self.system += "Only return the script itself, every line must start with a character name."
         self.system += "Descriptions for each of the characters are:\n"
         for speaker in self.speakers.values():
             self.system += f"{speaker.name}: {speaker.description}\n"
+        self.system += "Only return one person's response at a time."
+        self.system += "Each response must start with the character name, then a colon, then their response in a single line."
+        self.system += "Keep the responses short and witty."
+        self.system += "Make sure the responses are only one sentence long."
+        self.system += "Do not continue a previous response. Always start a new response."
         # History is fed in at every step
         self.step = 0
         if history is None:
@@ -180,8 +185,8 @@ def make_voices(voices_yaml: str):
                 assert 'url' in video, f"Video {video} does not have a url"
                 url = video['url']
                 start_minute = video.get('start_minute', 0)
-                duration = video.get('duration', 120)
-                label = f"audio.{name}.{i}"
+                duration = video.get('duration_seconds', 120)
+                label = os.path.join(STATE.AUDIO_SAVEDIR, f"audio.{name}.{i}")
                 output_path = extract_audio(url, label, start_minute, duration)
                 audio_paths.append(output_path)
             get_make_voice(name, audio_paths)
@@ -201,17 +206,16 @@ with gr.Blocks() as demo:
                     label="Record audio into conversation",
                     source="microphone",
                     type="filepath",
-                    # streaming=True,
                 )
                 gr_add_button = gr.Button(value="Add to conversation")
-                gr_reset_button = gr.Button(value="Reset conversation")
                 gr_saveaudio_button = gr.Button(value="Export audio")
                 gr_playaudio_button = gr.Button(value="Play audio")
             with gr.Column():
+                gr_iam = gr.Dropdown(
+                    choices=STATE.all_characters, label="I am", value=STATE.iam)
                 gr_chars = gr.CheckboxGroup(
                     STATE.all_characters, label="Characters", value=STATE.names)
-                gr_iam = gr.Dropdown(choices=STATE.names,
-                                     label="I am", value=STATE.iam)
+                gr_reset_button = gr.Button(value="Reset conversation")
             with gr.Accordion("Settings", open=False):
                 gr_model = gr.Dropdown(choices=["gpt-3.5-turbo", "gpt-4"],
                                        label='GPT Model behind conversation', value=STATE.model)

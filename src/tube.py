@@ -26,7 +26,7 @@ def extract_audio(url: str, label: str, start_minute: float = 0, duration: int =
     # Download the YouTube video
     youtube_object = YouTube(url)
     stream = youtube_object.streams.first()
-    video_path = Path(stream.download())
+    video_path = Path(stream.download(skip_existing=True))
     
     # Convert start time to seconds
     start_time_seconds = int(start_minute * 60)
