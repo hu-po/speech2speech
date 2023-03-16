@@ -3,6 +3,7 @@ import logging
 import os
 import random
 from typing import Dict, List, Tuple
+import glob
 
 import gradio as gr
 import yaml
@@ -20,6 +21,7 @@ class ConversationState:
     COLORS: list = ['#FFA07A', '#F08080', '#AFEEEE', '#B0E0E6', '#DDA0DD',
                     '#FFFFE0', '#F0E68C', '#90EE90', '#87CEFA', '#FFB6C1']
     YAML_FILEPATH: str = os.path.join(os.path.dirname(__file__), 'voices.yaml')
+    AUDIO_SAVEDIR: str = os.path.join(os.path.dirname(__file__), 'audio_export')
 
     def __init__(self,
                  names: list = None,
@@ -28,6 +30,12 @@ class ConversationState:
                  max_tokens: int = 15,
                  temperature: float = 0.5,
                  history: list = None):
+        self.model = model
+        self.max_tokens = max_tokens
+        self.temperature = temperature
+        # Make sure save dir exists, make any necessary directories
+        os.makedirs(self.AUDIO_SAVEDIR, exist_ok=True)
+        self.audio_savepath_stem = os.path.join(self.AUDIO_SAVEDIR, 'conversation')
         log.info(f"Resetting conversation")
         with open(self.YAML_FILEPATH, 'r') as file:
             self.characters_yaml = file.read()
@@ -38,9 +46,7 @@ class ConversationState:
         self.names = names or random.choices(self.all_characters, k=2)
         self.iam = iam or random.choice(self.names)
         assert self.iam in self.names, f"{self.iam} not in {self.names}"
-        self.model = model
-        self.max_tokens = max_tokens
-        self.temperature = temperature
+        log.info(f"Loading voices")
         self.speakers: Dict[str, Speaker] = {}
         self.speakers_descriptions: str = ''
         for i, name in enumerate(self.names):
@@ -110,7 +116,7 @@ def _step():
     # Push global state to the global scope
     global STATE
     log.info(f"Step")
-    asyncio.run(play_history(STATE.history))
+    asyncio.run(play_history(STATE.history, STATE.audio_savepath_stem))
     return STATE.html_history()
 
 
@@ -152,6 +158,11 @@ def step_continue():
 
 def save_audio():
     global STATE
+    audio_output_path = STATE.audio_savepath_stem + "_full.wav"
+    # Get all the audio files at the save location
+    for audio_path in glob.glob(f"{STATE.audio_savepath_stem}*.wav"):
+        # Combine into one file
+        os.system(f"ffmpeg -i {audio_path} -ac 1 -ar 16000 -f wav {audio_output_path}")
     return ''
 
 

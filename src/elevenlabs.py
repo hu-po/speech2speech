@@ -33,7 +33,7 @@ async def text_to_speechbytes_async(text, speaker, loop):
     return speech_bytes
 
 
-async def play_history(history):
+async def play_history(history, audio_savepath_stem: str = None):
     loop = asyncio.get_event_loop()
 
     # Create a list of tasks for all text_to_speechbytes function calls
@@ -41,9 +41,14 @@ async def play_history(history):
         text, speaker, loop) for speaker, text in history]
 
     # Run tasks concurrently, waiting for the first one to complete
+    i: int = 0
     for speech_bytes in await asyncio.gather(*tasks):
         audioFile = io.BytesIO(speech_bytes)
         soundFile = sf.SoundFile(audioFile)
+        # Save audio file to disk
+        if audio_savepath_stem is not None:
+            filename = f"{audio_savepath_stem}{i}.wav"
+            soundFile.write(filename, samplerate=soundFile.samplerate)
         sd.play(soundFile.read(), samplerate=soundFile.samplerate, blocking=True)
 
 
