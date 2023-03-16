@@ -114,13 +114,6 @@ def reset(names, iam, model, max_tokens, temperature):
     return STATE.html_history()
 
 
-def _step():
-    global STATE
-    log.info(f"Playing audio")
-    asyncio.run(play_history(STATE.history))
-    return STATE.html_history()
-
-
 def step_mic(audio):
     global STATE
     try:
@@ -129,7 +122,7 @@ def step_mic(audio):
     except TypeError as e:
         log.warning(e)
         pass
-    return _step()
+    return STATE.html_history()
 
 
 def step_continue():
@@ -154,13 +147,20 @@ def step_continue():
         except AssertionError as e:
             log.warning(e)
             continue
-    return _step()
+    return STATE.html_history()
 
 
 def save_audio():
     global STATE
     log.info(f"Saving audio")
     asyncio.run(save_history(STATE.history, STATE.audio_savepath))
+    return STATE.html_history()
+
+
+def play_audio():
+    global STATE
+    log.info(f"Playing audio")
+    asyncio.run(play_history(STATE.history))
     return STATE.html_history()
 
 
@@ -203,9 +203,10 @@ with gr.Blocks() as demo:
                     type="filepath",
                     # streaming=True,
                 )
-                gr_add_button = gr.Button(value="Let em Talk")
+                gr_add_button = gr.Button(value="Add to conversation")
                 gr_reset_button = gr.Button(value="Reset conversation")
                 gr_saveaudio_button = gr.Button(value="Export audio")
+                gr_playaudio_button = gr.Button(value="Play audio")
             with gr.Column():
                 gr_chars = gr.CheckboxGroup(
                     STATE.all_characters, label="Characters", value=STATE.names)
@@ -234,6 +235,7 @@ with gr.Blocks() as demo:
         outputs=[gr_convo_output],
     )
     gr_saveaudio_button.click(save_audio, None, None)
+    gr_playaudio_button.click(play_audio, None, None)
     gr_make_voice_button.click(
         make_voices, inputs=gr_voice_data, outputs=gr_make_voice_output,
     )
