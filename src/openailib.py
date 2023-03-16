@@ -34,10 +34,10 @@ def top_response(prompt, system=None, model="gpt-3.5-turbo", max_tokens=20, temp
                 "content": system,
             },
         ] + _prompt
-    log.info(f"API call to {model} with prompt: \n\t{_prompt}")
+    log.info(f"API call to {model} with prompt: \n\n\t{_prompt}\n\n")
     _response = openai.ChatCompletion.create(
         model=model,
-        messages=prompt,
+        messages=_prompt,
         temperature=temperature,
         n=1,
         max_tokens=max_tokens,
@@ -45,15 +45,3 @@ def top_response(prompt, system=None, model="gpt-3.5-turbo", max_tokens=20, temp
     log.info(f"API reponse: \n\t{_response}")
     response: str = _response['choices'][0]['message']['content']
     return response
-
-
-@timeit
-def fake_conversation(speakers, dialogue, iam: str, request: str, **kwargs):
-    if not dialogue:
-        dialogue = []
-        for speaker in speakers:
-            if speaker.description:
-                dialogue += [f"{speaker.name}: {speaker.description}."]
-    dialogue += [f"{iam}: {request}."]
-    system = f"You create funny conversation dialogues. This conversation is between {', '.join([speaker.name for speaker in speakers])}. Do not introduce new characters. Only return the script itself, every line must start with a character name."
-    return top_response('\n'.join(dialogue), system=system, **kwargs)
