@@ -9,7 +9,7 @@ import gradio as gr
 import yaml
 
 from src.elevenlabs import (Speaker, check_voice_exists, get_make_voice,
-                            play_history)
+                            play_history, save_history)
 from src.openailib import top_response, speech_to_text
 from src.tube import extract_audio
 
@@ -21,7 +21,8 @@ class ConversationState:
     COLORS: list = ['#FFA07A', '#F08080', '#AFEEEE', '#B0E0E6', '#DDA0DD',
                     '#FFFFE0', '#F0E68C', '#90EE90', '#87CEFA', '#FFB6C1']
     YAML_FILEPATH: str = os.path.join(os.path.dirname(__file__), 'voices.yaml')
-    AUDIO_SAVEDIR: str = os.path.join(os.path.dirname(__file__), 'audio_export')
+    AUDIO_SAVEDIR: str = os.path.join(
+        os.path.dirname(__file__), 'audio_export')
 
     def __init__(self,
                  names: list = None,
@@ -35,7 +36,8 @@ class ConversationState:
         self.temperature = temperature
         # Make sure save dir exists, make any necessary directories
         os.makedirs(self.AUDIO_SAVEDIR, exist_ok=True)
-        self.audio_savepath_stem = os.path.join(self.AUDIO_SAVEDIR, 'conversation')
+        self.audio_savepath = os.path.join(
+            self.AUDIO_SAVEDIR, 'conversation.wav')
         log.info(f"Resetting conversation")
         with open(self.YAML_FILEPATH, 'r') as file:
             self.characters_yaml = file.read()
@@ -113,10 +115,9 @@ def reset(names, iam, model, max_tokens, temperature):
 
 
 def _step():
-    # Push global state to the global scope
     global STATE
-    log.info(f"Step")
-    asyncio.run(play_history(STATE.history, STATE.audio_savepath_stem))
+    log.info(f"Playing audio")
+    asyncio.run(play_history(STATE.history))
     return STATE.html_history()
 
 
@@ -158,12 +159,9 @@ def step_continue():
 
 def save_audio():
     global STATE
-    audio_output_path = STATE.audio_savepath_stem + "_full.wav"
-    # Get all the audio files at the save location
-    for audio_path in glob.glob(f"{STATE.audio_savepath_stem}*.wav"):
-        # Combine into one file
-        os.system(f"ffmpeg -i {audio_path} -ac 1 -ar 16000 -f wav {audio_output_path}")
-    return ''
+    log.info(f"Saving audio")
+    asyncio.run(save_history(STATE.history, STATE.audio_savepath))
+    return STATE.html_history()
 
 
 def make_voices(voices_yaml: str):
