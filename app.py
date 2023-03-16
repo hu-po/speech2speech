@@ -63,7 +63,7 @@ class ConversationState:
         self.system += "Only return the script itself, every line must start with a character name."
         self.system += "Descriptions for each of the characters are:\n"
         for speaker in self.speakers.values():
-             self.system += f"{speaker.name}: {speaker.description}\n"
+            self.system += f"{speaker.name}: {speaker.description}\n"
         # History is fed in at every step
         self.step = 0
         if history is None:
@@ -105,12 +105,14 @@ def reset(names, iam, model, max_tokens, temperature):
     )
     return STATE.html_history()
 
+
 def _step():
     # Push global state to the global scope
     global STATE
     log.info(f"Step")
     asyncio.run(play_history(STATE.history))
     return STATE.html_history()
+
 
 def step_mic(audio):
     global STATE
@@ -121,6 +123,7 @@ def step_mic(audio):
         log.warning(e)
         pass
     return _step()
+
 
 def step_continue():
     global STATE
@@ -145,6 +148,11 @@ def step_continue():
             log.warning(e)
             continue
     return _step()
+
+
+def save_audio():
+    global STATE
+    return ''
 
 
 def make_voices(voices_yaml: str):
@@ -193,12 +201,12 @@ with gr.Blocks() as demo:
                 gr_chars = gr.CheckboxGroup(
                     STATE.all_characters, label="Characters", value=STATE.names)
                 gr_iam = gr.Dropdown(choices=STATE.names,
-                                    label="I am", value=STATE.iam)
+                                     label="I am", value=STATE.iam)
             with gr.Accordion("Settings", open=False):
                 gr_model = gr.Dropdown(choices=["gpt-3.5-turbo", "gpt-4"],
-                                    label='GPT Model behind conversation', value=STATE.model)
+                                       label='GPT Model behind conversation', value=STATE.model)
                 gr_max_tokens = gr.Slider(minimum=1, maximum=500, value=STATE.max_tokens,
-                                        label="Max tokens", step=1)
+                                          label="Max tokens", step=1)
                 gr_temperature = gr.Slider(
                     minimum=0.0, maximum=1.0, value=STATE.temperature, label="Temperature (randomness in conversation)")
     with gr.Tab("New Characters"):
@@ -208,33 +216,17 @@ with gr.Blocks() as demo:
         gr_make_voice_output = gr.Textbox(
             lines=2, label="Character creation logs...")
 
-    # Environment resets
-    # dep = demo.load(step, gr_mic, gr_convo_output, every=1)
-    gr_mic.change(
-        step_mic,
-        gr_mic,
-        gr_convo_output,
-    )
-    gr_add_button.click(
-        step_continue,
-        None,
-        gr_convo_output
-    )
+    # Buttons and actions
+    gr_mic.change(step_mic, gr_mic, gr_convo_output)
+    gr_add_button.click(step_continue, None, gr_convo_output)
     gr_reset_button.click(
         reset,
         inputs=[gr_chars, gr_iam, gr_model, gr_max_tokens, gr_temperature],
         outputs=[gr_convo_output],
-        # cancels=[dep],
     )
-    gr_saveaudio_button.click(
-        save_audio,
-        inputs=[gr_convo_output],
-        outputs=[gr_convo_output],
-        # cancels=[dep],
-    )
+    gr_saveaudio_button.click(save_audio, None, None)
     gr_make_voice_button.click(
         make_voices, inputs=gr_voice_data, outputs=gr_make_voice_output,
-        # cancels=[dep],
     )
 
 if __name__ == "__main__":
