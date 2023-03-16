@@ -61,12 +61,13 @@ class ConversationState:
         self.system += f"This conversation is between {', '.join(self.names)}."
         self.system += "Do not introduce new characters."
         self.system += "Only return the script itself, every line must start with a character name."
+        self.system += "Descriptions for each of the characters are:\n"
+        for speaker in self.speakers.values():
+             self.system += f"{speaker.name}: {speaker.description}\n"
         # History is fed in at every step
         self.step = 0
         if history is None:
             self.history: List[Tuple[Speaker, str]] = []
-        # for speaker in self.speakers.values():
-        #     self.add_to_history(speaker.description, speaker)
 
     def add_to_history(self, text: str, speaker: Speaker = None):
         if speaker is None:
@@ -82,7 +83,7 @@ class ConversationState:
     def html_history(self) -> str:
         history_html: str = ''
         for speaker, text in self.history:
-            _bubble = f"<div style='background-color: {speaker.color}; border-radius: 5px; padding: 5px; margin: 5px;'>{speaker.name}:{text}</div>"
+            _bubble = f"<div style='background-color: {speaker.color}; border-radius: 5px; padding: 5px; margin: 5px;'>{speaker.name}: {text}</div>"
             history_html += _bubble
         return history_html
 
@@ -177,25 +178,29 @@ def make_voices(voices_yaml: str):
 with gr.Blocks() as demo:
     with gr.Tab("Conversation"):
         gr_convo_output = gr.HTML()
-        gr_mic = gr.Audio(
-            label="Click to join the conversation",
-            source="microphone",
-            type="filepath",
-            # streaming=True,
-        )
-        gr_add_button = gr.Button(value="Add to conversation")
-        gr_reset_button = gr.Button(value="Reset conversation")
-        gr_chars = gr.CheckboxGroup(
-            STATE.all_characters, label="Characters", value=STATE.names)
-        gr_iam = gr.Dropdown(choices=STATE.names,
-                             label="I am", value=STATE.iam)
-        with gr.Accordion("Settings", open=False):
-            gr_model = gr.Dropdown(choices=["gpt-3.5-turbo", "gpt-4"],
-                                   label='GPT Model behind conversation', value=STATE.model)
-            gr_max_tokens = gr.Slider(minimum=1, maximum=500, value=STATE.max_tokens,
-                                      label="Max tokens", step=1)
-            gr_temperature = gr.Slider(
-                minimum=0.0, maximum=1.0, value=STATE.temperature, label="Temperature (randomness in conversation)")
+        with gr.Row():
+            with gr.Column():
+                gr_mic = gr.Audio(
+                    label="Record audio into conversation",
+                    source="microphone",
+                    type="filepath",
+                    # streaming=True,
+                )
+                gr_add_button = gr.Button(value="Let em Talk")
+                gr_reset_button = gr.Button(value="Reset conversation")
+                gr_saveaudio_button = gr.Button(value="Export audio")
+            with gr.Column():
+                gr_chars = gr.CheckboxGroup(
+                    STATE.all_characters, label="Characters", value=STATE.names)
+                gr_iam = gr.Dropdown(choices=STATE.names,
+                                    label="I am", value=STATE.iam)
+            with gr.Accordion("Settings", open=False):
+                gr_model = gr.Dropdown(choices=["gpt-3.5-turbo", "gpt-4"],
+                                    label='GPT Model behind conversation', value=STATE.model)
+                gr_max_tokens = gr.Slider(minimum=1, maximum=500, value=STATE.max_tokens,
+                                        label="Max tokens", step=1)
+                gr_temperature = gr.Slider(
+                    minimum=0.0, maximum=1.0, value=STATE.temperature, label="Temperature (randomness in conversation)")
     with gr.Tab("New Characters"):
         gr_make_voice_button = gr.Button(value="Update Characters")
         gr_voice_data = gr.Textbox(
@@ -218,6 +223,12 @@ with gr.Blocks() as demo:
     gr_reset_button.click(
         reset,
         inputs=[gr_chars, gr_iam, gr_model, gr_max_tokens, gr_temperature],
+        outputs=[gr_convo_output],
+        # cancels=[dep],
+    )
+    gr_saveaudio_button.click(
+        save_audio,
+        inputs=[gr_convo_output],
         outputs=[gr_convo_output],
         # cancels=[dep],
     )
