@@ -19,6 +19,7 @@ log = logging.getLogger(__name__)
 try:
     USER = ElevenLabsUser(os.environ["ELEVENLABS_API_KEY"])
 except KeyError as e:
+    USER = None
     log.warning("ELEVENLABS_API_KEY not found in environment variables.")
     pass
 
