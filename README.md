@@ -1,6 +1,8 @@
-# Speech2Speech
+# 🦜Speech2Speech🦜
 
-Create a conversation with GPT and anyone on any youtube video. You just need 1minute of a youtube video and this app will create a whole conversation for you. Plus you don't interact with text, you interact with SPEECH 😲
+** [Now Available as a 🤗HuggingFace Spaces](https://huggingface.co/spaces/hu-po/speech2speech) **
+
+Have a conversation with anyone from any youtube video. You just need a youtube link (~1minute of audio) and this app will let you talk (with your mouth not your fingers) to that person (or at least their GPT-based AI replica). Create wacky funny conversations with weird zany characters.
 
 Full YouTube vid:
 
