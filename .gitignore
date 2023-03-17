@@ -1,6 +1,9 @@
 # audio file
 *.wav
 
+# Pycache
+__pycache__/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
