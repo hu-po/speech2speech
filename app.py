@@ -3,7 +3,6 @@ import logging
 import os
 import random
 from typing import Dict, List, Tuple
-import glob
 
 import gradio as gr
 import yaml
@@ -15,6 +14,20 @@ from src.tube import extract_audio
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
+
+
+def set_openai_key(openai_api_key_textbox):
+    log.info(f"Setting OpenAI key.")
+    os.environ["OPENAI_API_KEY"] = openai_api_key_textbox
+    import openai
+    openai.api_key = os.getenv("OPENAI_API_KEY")
+
+
+def set_elevenlabs_key(elevenlabs_api_key_textbox):
+    log.info(f"Setting ElevenLabs key.")
+    os.environ["ELEVENLABS_API_KEY"] = elevenlabs_api_key_textbox
+    import elevenlabs
+    elevenlabs.api_key = os.getenv("ELEVENLABS_API_KEY")
 
 
 class ConversationState:
@@ -159,7 +172,7 @@ def save_audio():
     global STATE
     log.info(f"Saving audio")
     asyncio.run(save_history(STATE.history, STATE.audio_savepath))
-    return STATE.html_history()
+    return STATE.audio_savepath
 
 
 def play_audio():
@@ -198,6 +211,7 @@ def make_voices(voices_yaml: str):
 
 # Define the main GradIO UI
 with gr.Blocks() as demo:
+    gr.HTML('''<center><h1>Speech2Speech</h1></center>''')
     with gr.Tab("Conversation"):
         gr_convo_output = gr.HTML()
         with gr.Row():
@@ -208,21 +222,38 @@ with gr.Blocks() as demo:
                     type="filepath",
                 )
                 gr_add_button = gr.Button(value="Add to conversation")
-                gr_saveaudio_button = gr.Button(value="Export audio")
                 gr_playaudio_button = gr.Button(value="Play audio")
+                gr_saveaudio_button = gr.Button(value="Export audio")
+                gr_outputaudio = gr.Audio(
+                    label="Audio output",
+                    source="upload",
+                    type="filepath",
+                )
             with gr.Column():
                 gr_iam = gr.Dropdown(
                     choices=STATE.all_characters, label="I am", value=STATE.iam)
                 gr_chars = gr.CheckboxGroup(
                     STATE.all_characters, label="Characters", value=STATE.names)
                 gr_reset_button = gr.Button(value="Reset conversation")
-            with gr.Accordion("Settings", open=False):
-                gr_model = gr.Dropdown(choices=["gpt-3.5-turbo", "gpt-4"],
-                                       label='GPT Model behind conversation', value=STATE.model)
-                gr_max_tokens = gr.Slider(minimum=1, maximum=500, value=STATE.max_tokens,
-                                          label="Max tokens", step=1)
-                gr_temperature = gr.Slider(
-                    minimum=0.0, maximum=1.0, value=STATE.temperature, label="Temperature (randomness in conversation)")
+                with gr.Accordion("Settings", open=False):
+                    openai_api_key_textbox = gr.Textbox(
+                        placeholder="Paste your OpenAI API key here",
+                        show_label=False,
+                        lines=1,
+                        type="password",
+                    )
+                    elevenlabs_api_key_textbox = gr.Textbox(
+                        placeholder="Paste your ElevenLabs API key here",
+                        show_label=False,
+                        lines=1,
+                        type="password",
+                    )
+                    gr_model = gr.Dropdown(choices=["gpt-3.5-turbo", "gpt-4"],
+                                           label='GPT Model behind conversation', value=STATE.model)
+                    gr_max_tokens = gr.Slider(minimum=1, maximum=500, value=STATE.max_tokens,
+                                              label="Max tokens", step=1)
+                    gr_temperature = gr.Slider(
+                        minimum=0.0, maximum=1.0, value=STATE.temperature, label="Temperature (randomness in conversation)")
     with gr.Tab("New Characters"):
         gr_make_voice_button = gr.Button(value="Update Characters")
         gr_voice_data = gr.Textbox(
@@ -230,15 +261,25 @@ with gr.Blocks() as demo:
         gr_make_voice_output = gr.Textbox(
             lines=2, label="Character creation logs...")
 
+    gr.HTML('''<center>
+    Created by <a href="https://youtube.com/@hu-po">Hu Po</a> GitHub: <a href="https://github.com/hu-po/speech2speech">speech2speech</a>
+    <br>
+    Duplicate this space:<a href="https://huggingface.co/spaces/hu-po/speech2speech?duplicate=true"><img src="https://bit.ly/3gLdBN6" alt="Duplicate Space"></a>
+    </center>
+    ''')
+
     # Buttons and actions
     gr_mic.change(step_mic, gr_mic, gr_convo_output)
+    openai_api_key_textbox.change(set_openai_key, openai_api_key_textbox, None)
+    elevenlabs_api_key_textbox.change(
+        set_elevenlabs_key, elevenlabs_api_key_textbox, None)
     gr_add_button.click(step_continue, None, gr_convo_output)
     gr_reset_button.click(
         reset,
         inputs=[gr_chars, gr_iam, gr_model, gr_max_tokens, gr_temperature],
         outputs=[gr_convo_output],
     )
-    gr_saveaudio_button.click(save_audio, None, None)
+    gr_saveaudio_button.click(save_audio, None, gr_outputaudio)
     gr_playaudio_button.click(play_audio, None, None)
     gr_make_voice_button.click(
         make_voices, inputs=gr_voice_data, outputs=gr_make_voice_output,
