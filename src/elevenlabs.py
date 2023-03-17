@@ -5,7 +5,7 @@ import os
 import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from typing import Dict, List, Union, Tuple
+from typing import List, Union, Tuple
 
 import sounddevice as sd
 import soundfile as sf
@@ -16,7 +16,11 @@ from .utils import timeit
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
-USER = ElevenLabsUser(os.environ["ELEVENLABS_API_KEY"])
+try:
+    USER = ElevenLabsUser(os.environ["ELEVENLABS_API_KEY"])
+except KeyError as e:
+    log.warning("ELEVENLABS_API_KEY not found in environment variables.")
+    pass
 
 
 @dataclass
@@ -71,6 +75,10 @@ async def save_history(history: List[Tuple[Speaker, str]], audio_savepath: str):
 
 
 def check_voice_exists(voice: Union[ElevenLabsVoice, str]) -> Union[ElevenLabsVoice, None]:
+    if USER is None:
+        log.warning(
+            "No ElevenLabsUser found, have you set the ELEVENLABS_API_KEY environment variable?")
+        return None
     log.info(f"Getting voice {voice}...")
     _available_voices = USER.get_voices_by_name(voice)
     if _available_voices:
@@ -81,6 +89,10 @@ def check_voice_exists(voice: Union[ElevenLabsVoice, str]) -> Union[ElevenLabsVo
 
 @timeit
 def get_make_voice(voice: Union[ElevenLabsVoice, str], audio_path: List[str] = None) -> ElevenLabsVoice:
+    if USER is None:
+        log.warning(
+            "No ElevenLabsUser found, have you set the ELEVENLABS_API_KEY environment variable?")
+        return None
     _voice = check_voice_exists(voice)
     if _voice is not None:
         return _voice

@@ -4,10 +4,15 @@ import os
 from .utils import timeit
 
 import openai
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
+
+try:
+    openai.api_key = os.getenv("OPENAI_API_KEY")
+except KeyError as e:
+    log.warning("OPENAI_API_KEY not found in environment variables.")
+    pass
 
 
 @timeit
