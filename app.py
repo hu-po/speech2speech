@@ -26,8 +26,8 @@ def set_openai_key(openai_api_key_textbox):
 def set_elevenlabs_key(elevenlabs_api_key_textbox):
     log.info(f"Setting ElevenLabs key.")
     os.environ["ELEVENLABS_API_KEY"] = elevenlabs_api_key_textbox
-    import elevenlabs
-    elevenlabs.api_key = os.getenv("ELEVENLABS_API_KEY")
+    import elevenlabslib
+    elevenlabslib.api_key = os.getenv("ELEVENLABS_API_KEY")
 
 
 class ConversationState:
