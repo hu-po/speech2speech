@@ -9,25 +9,11 @@ import yaml
 
 from src.elevenlabs import (Speaker, check_voice_exists, get_make_voice,
                             play_history, save_history)
-from src.openailib import top_response, speech_to_text
+from src.openailib import top_response, speech_to_text, set_openai_key
 from src.tube import extract_audio
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
-
-
-def set_openai_key(openai_api_key_textbox):
-    log.info(f"Setting OpenAI key.")
-    os.environ["OPENAI_API_KEY"] = openai_api_key_textbox
-    import openai
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-
-
-def set_elevenlabs_key(elevenlabs_api_key_textbox):
-    log.info(f"Setting ElevenLabs key.")
-    os.environ["ELEVENLABS_API_KEY"] = elevenlabs_api_key_textbox
-    import elevenlabslib
-    elevenlabslib.api_key = os.getenv("ELEVENLABS_API_KEY")
 
 
 class ConversationState:

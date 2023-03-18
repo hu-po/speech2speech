@@ -16,13 +16,21 @@ from .utils import timeit
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
-try:
-    USER = ElevenLabsUser(os.environ["ELEVENLABS_API_KEY"])
-except KeyError as e:
-    USER = None
-    log.warning("ELEVENLABS_API_KEY not found in environment variables.")
-    pass
+USER = None
 
+def set_elevenlabs_key(elevenlabs_api_key_textbox=None):
+    global USER
+    log.info(f"Setting ElevenLabs key.")
+    if elevenlabs_api_key_textbox is not None:
+        os.environ["ELEVENLABS_API_KEY"] = elevenlabs_api_key_textbox
+    try:
+        USER = ElevenLabsUser(os.environ["ELEVENLABS_API_KEY"])
+    except KeyError as e:
+        USER = None
+        log.warning("ELEVENLABS_API_KEY not found in environment variables.")
+        pass
+
+set_elevenlabs_key()
 
 @dataclass
 class Speaker:

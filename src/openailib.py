@@ -8,12 +8,18 @@ import openai
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
-try:
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-except KeyError as e:
-    log.warning("OPENAI_API_KEY not found in environment variables.")
-    pass
 
+def set_openai_key(openai_api_key_textbox = None):
+    log.info(f"Setting OpenAI key.")
+    if openai_api_key_textbox is not None:
+        os.environ["OPENAI_API_KEY"] = openai_api_key_textbox
+    try:
+        openai.api_key = os.getenv("OPENAI_API_KEY")
+    except KeyError as e:
+        log.warning("OPENAI_API_KEY not found in environment variables.")
+        pass
+
+set_openai_key()
 
 @timeit
 def speech_to_text(audio_path):
