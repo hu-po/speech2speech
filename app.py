@@ -197,7 +197,26 @@ def make_voices(voices_yaml: str):
 
 # Define the main GradIO UI
 with gr.Blocks() as demo:
-    gr.HTML('''<center><h1>Speech2Speech</h1></center>''')
+    gr.HTML('''
+    <center>
+    <h1>Speech2Speech</h1>
+    Make a private copy of this space to paste your API keys.
+    <br>
+    <a href="https://huggingface.co/spaces/hu-po/speech2speech?duplicate=true"><img src="https://bit.ly/3gLdBN6" alt="Duplicate Space"></a>
+    </center>''')
+    with gr.Row():
+        openai_api_key_textbox = gr.Textbox(
+            placeholder="Paste your OpenAI API key here",
+            show_label=False,
+            lines=1,
+            type="password",
+        )
+        elevenlabs_api_key_textbox = gr.Textbox(
+            placeholder="Paste your ElevenLabs API key here",
+            show_label=False,
+            lines=1,
+            type="password",
+        )
     with gr.Tab("Conversation"):
         gr_convo_output = gr.HTML()
         with gr.Row():
@@ -249,8 +268,6 @@ with gr.Blocks() as demo:
 
     gr.HTML('''<center>
     Created by <a href="https://youtube.com/@hu-po">Hu Po</a> GitHub: <a href="https://github.com/hu-po/speech2speech">speech2speech</a>
-    <br>
-    Duplicate this space:<a href="https://huggingface.co/spaces/hu-po/speech2speech?duplicate=true"><img src="https://bit.ly/3gLdBN6" alt="Duplicate Space"></a>
     </center>
     ''')
 
