@@ -1,7 +1,5 @@
 # 🦜Speech2Speech🦜
 
-** [Now Available as a 🤗HuggingFace Spaces](https://huggingface.co/spaces/hu-po/speech2speech) **
-
 Have a conversation with anyone from any youtube video. You just need a youtube link (~1minute of audio) and this app will let you talk (with your mouth not your fingers) to that person (or at least their GPT-based AI replica). Create wacky funny conversations with weird zany characters.
 
 Full YouTube vid:
@@ -13,6 +11,8 @@ Full YouTube vid:
 - [ElevenLabs](https://elevenlabs.com/)
 - [OpenAI](https://openai.com/)
 - [Gradio](https://gradio.app/)
+
+** [Now Available as a 🤗HuggingFace Spaces](https://huggingface.co/spaces/hu-po/speech2speech) **
 
 ## Setup
 
