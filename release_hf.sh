@@ -1,4 +1,4 @@
-export RELEASE_VERSION=0.2
+export RELEASE_VERSION=0.3
 cp app.py ../hf_speech2speech/app.py
 cp -rf src/ ../hf_speech2speech/src/
 cp voices.yaml ../hf_speech2speech/voices.yaml
@@ -8,3 +8,4 @@ cd ../hf_speech2speech
 git add .
 git commit -m "release ${RELEASE_VERSION}"
 git push
+cd ../speech2speech

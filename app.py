@@ -8,7 +8,7 @@ import gradio as gr
 import yaml
 
 from src.elevenlabs import (Speaker, check_voice_exists, get_make_voice,
-                            play_history, save_history)
+                            play_history, save_history, set_elevenlabs_key)
 from src.openailib import top_response, speech_to_text, set_openai_key
 from src.tube import extract_audio
 
