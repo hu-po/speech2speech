@@ -1,6 +1,10 @@
 # audio file
 *.wav
 
+# API keys
+openai.txt
+google.txt
+
 # Pycache
 __pycache__/
 
